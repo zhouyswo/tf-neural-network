@@ -1,6 +1,5 @@
 import cv2 as cv
 
-
 # 调用转换函数实现图像色彩空间转换
 def color_space_demo(img):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)

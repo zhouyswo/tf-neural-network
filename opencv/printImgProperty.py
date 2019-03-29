@@ -11,7 +11,7 @@ def get_img_info(img):
     # pixel_data = np.array(img)
     # print(pixel_data)
 
-img = cv.imread("F:/PythonWorkPlace/tf-neural-network/resource/images/2786001.jpg")
+img = cv.imread("../resource/images/2786001.jpg")
 # cv.namedWindow("show", cv.WINDOW_NORMAL)
 cv.imshow("show",img)
 get_img_info(img)

@@ -15,7 +15,7 @@ def access_pixles(image):
                 image[row, col, c] = 255 - pv
     cv.imshow("修改后", image)
 
-img = cv.imread("F:/PythonWorkPlace/tf-neural-network/resource/images/2786001.jpg")
+img = cv.imread("../resource/images/2786001.jpg")
 #cv.namedWindow("原来", cv.WINDOW_NORMAL)
 cv.imshow("原来", img)
 t1 = cv.getTickCount()#毫秒级别的计时函数,记录了系统启动以来的时间毫秒

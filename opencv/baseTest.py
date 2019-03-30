@@ -10,6 +10,8 @@ img = cv.imread('/opt/workplace/testDatas/data/flower_500/500/sunflowers/4504500
 # cv.destroyAllWindows()
 
 
+
+
 #Matplotlib显示图像
 # plt.imshow(img, cmap = 'gray', interpolation = 'bicubic')
 # plt.xticks([]), plt.yticks([])  # to hide tick values on X and Y axis

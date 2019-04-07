@@ -5,6 +5,7 @@ Yolo V1 by tensorflow
 import numpy as np
 import tensorflow as tf
 import cv2
+import os
 
 
 def leak_relu(x, alpha=0.1):
@@ -181,13 +182,17 @@ class Yolo(object):
         """Do detection given a image file"""
         # read image
         image = cv2.imread(image_file)
+
         img_h, img_w, _ = image.shape
         scores, boxes, box_classes = self._detect_from_image(image)
         predict_boxes = []
         for i in range(len(scores)):
             predict_boxes.append((self.classes[box_classes[i]], boxes[i, 0],
                                 boxes[i, 1], boxes[i, 2], boxes[i, 3], scores[i]))
-        self.show_results(image, predict_boxes, imshow, deteted_boxes_file, detected_image_file)
+        self.makePeopleAction(image, predict_boxes)
+        self.makeVideo(image)
+        #self.readVideo()
+        #self.show_results(image, predict_boxes, imshow, deteted_boxes_file, detected_image_file)
 
     def _detect_from_image(self, image):
         """Do detection given a cv image"""
@@ -201,10 +206,12 @@ class Yolo(object):
                     feed_dict={self.images: _images, self.width: img_w, self.height: img_h})
         return scores, boxes, box_classes
 
+
     def show_results(self, image, results, imshow=True, deteted_boxes_file=None,
                      detected_image_file=None):
         """Show the detection boxes"""
         img_cp = image.copy()
+
         if deteted_boxes_file:
             f = open(deteted_boxes_file, "w")
         #  draw boxes
@@ -233,6 +240,71 @@ class Yolo(object):
         if deteted_boxes_file:
             f.close()
 
+    def makePeopleAction(self,image,results):
+        #cp2 = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
+        flag=0
+        for i in range(len(results)):
+            for j in range(1,50):
+                for q in range(1,4):
+                    leftpath ="../../../resource/images/peopleandhands/0%s.png" % (q)
+                    left = cv2.imread(leftpath)
+                    h0, w0 = left.shape[:2]
+                    rightpath = "../../../resource/images/peopleandhands/1%s.png" % (q)
+                    right = cv2.imread(rightpath)
+                    h1, w1 = right.shape[:2]
+
+                    x = int(results[i][1])
+                    y = int(results[i][2])
+                    w = int(results[i][3]) // 2
+                    h = int(results[i][4]) // 2
+
+                    leftx0 = x - h0-200
+                    lefty0 = y - w0+100
+                    leftx1 = x-200
+                    lefty1 = y+100
+
+                    rightx0 = x- h1-200
+                    righty0 = y+w
+                    rightx1 = x-200
+                    righty1 = y+ w1+w
+                    cp2 = image.copy()
+                    #roi_rect = cv2.Rect(128, 128, roi.cols, roi.rows);
+                    cp2[leftx0:leftx1, lefty0:lefty1] = left
+                    cp2[rightx0:rightx1, righty0:righty1] = right
+                    wightpath = "../../../resource/images/peopleandhands/action/action%s.jpg" % (flag)
+                    cv2.imwrite(wightpath, cp2)
+                    flag+=1
+    def makeVideo(self,image):
+        filelist = os.listdir("../../../resource/images/peopleandhands/action/")
+        fps = 2  # 视频每秒24帧
+        # h0, w0 =  cv2.resize(image,(640, 480),cv2.INTER_LINEAR).shape[:2]
+        size = (640, 480)  # 需要转为视频的图片的尺寸
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        #fourcc = cv2.VideoWriter_fourcc('I', '4', '2', '0')
+        video = cv2.VideoWriter("../../../resource/images/peopleandhands/action/actionTest1.avi",fourcc, fps, size)
+        for item in range(147):
+            # 找到路径中所有后缀名为.png的文件，可以更换为.jpg或其它
+            item = "../../../resource/images/peopleandhands/action/action%s.jpg" % (item)
+            img = cv2.resize(cv2.imread(item),(640, 480),cv2.INTER_LINEAR)
+            video.write(img)
+        video.release()
+
+
+    def readVideo(self):
+        #../../../resource/images/peopleandhands/action/actionTest1.avi
+        #../../../resource/video/girl.mp4
+        capture = cv2.VideoCapture("../../../resource/images/peopleandhands/action/actionTest1.avi")
+
+        while True:
+            ret, frame = capture.read()
+            if ret == False:
+                break
+            cv2.imshow("video", frame)
+            if cv2.waitKey(0) & 0xFF == ord('q'):
+                break
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
 if __name__ == "__main__":
-    yolo_net = Yolo("../../../model/yolo/weights/YOLO_small.ckpt")
-    yolo_net.detect_from_file("../../../resource/images/sunflower2.jpg")
+    yolo_net = Yolo("/opt/workplace/testDatas/models/yolo/weights/YOLO_small.ckpt")
+    yolo_net.detect_from_file("../../../resource/images/peopleandhands/1554513569718.jpg")

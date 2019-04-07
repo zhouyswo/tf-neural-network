@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/baseCnnModel" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/base" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/imgGeneratorModel/dcgan/v2" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/imgGeneratorModel/dcgan/v1" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.6 (tensorflow)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

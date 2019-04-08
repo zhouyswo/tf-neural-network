@@ -19,7 +19,7 @@ flags.DEFINE_integer("output_width", None, "The size of the output images to pro
 flags.DEFINE_string("dataset", "wings", "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("input_fname_pattern", "*.png", "Glob pattern of filename of input images [*]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
-flags.DEFINE_string("data_dir", "../../resource/images", "Root directory of dataset [data]")
+flags.DEFINE_string("data_dir", "../../../resource/images", "Root directory of dataset [data]")
 flags.DEFINE_string("sample_dir", "samples", "Directory name to save the image samples [samples]")
 flags.DEFINE_boolean("train", True, "True for training, False for testing [False]")
 flags.DEFINE_boolean("crop", True, "True for training, False for testing [False]")

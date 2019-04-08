@@ -35,8 +35,8 @@ def read_mnist_data(path):
 
 class MnistProvider(object):
     def __init__(self, folder_path, shuffle=True):
-        train_data_path = os.path.join(folder_path, 'train-images-idx3-ubyte')
-        test_data_path = os.path.join(folder_path, 't10k-images-idx3-ubyte')
+        train_data_path = os.path.join(folder_path, 'train-images.idx3-ubyte')
+        test_data_path = os.path.join(folder_path, 't10k-images.idx3-ubyte')
 
         self.train_data = read_mnist_data(train_data_path)
         self.val_data = read_mnist_data(test_data_path)

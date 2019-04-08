@@ -7,7 +7,7 @@ import argparse
 import tensorflow as tf
 import numpy as np
 from dataset import MnistProvider, render_fonts_image
-from v1.ops import lrelu
+from ops import lrelu
 
 
 def generator(input, random_dim, is_train, reuse=False):
@@ -177,7 +177,7 @@ def infer(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='data',
+    parser.add_argument('--data_path', type=str, default='../../../resource/images/minist',
                         help='folder which stores mnist train and test files')
     parser.add_argument('--mode', type=str, default='train',
                         help='could be either infer or train')

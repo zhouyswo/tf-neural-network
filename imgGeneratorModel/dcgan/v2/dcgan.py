@@ -87,72 +87,77 @@ def discriminator(input, is_train, reuse=False):
 
 
 def train(args):
-    random_dim = args.rand_dim
-    # create dcgan
-    with tf.variable_scope('input'):
-        real_image = tf.placeholder(tf.float32, [None, 32, 32, 1], name='mnist_image')
-        random_input = tf.placeholder(tf.float32, shape=[None, random_dim], name='rand_input')
-        is_train = tf.placeholder(tf.bool, name='is_train')
-    fake_image = generator(random_input, random_dim, is_train)
-    real_result = discriminator(real_image, is_train)
-    fake_result = discriminator(fake_image, is_train, reuse=True)
-    d_loss = -tf.reduce_mean(tf.log(real_result) + tf.log(1. - fake_result))  # This optimizes the discriminator.
-    g_loss = -tf.reduce_mean(tf.log(fake_result))  # This optimizes the generator.
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    tf_config.log_device_placement = True
+    with tf.device('/cpu:0'):
+        random_dim = args.rand_dim
+        # create dcgan
+        with tf.variable_scope('input'):
+            real_image = tf.placeholder(tf.float32, [None, 32, 32, 1], name='mnist_image')
+            random_input = tf.placeholder(tf.float32, shape=[None, random_dim], name='rand_input')
+            is_train = tf.placeholder(tf.bool, name='is_train')
+        fake_image = generator(random_input, random_dim, is_train)
+        real_result = discriminator(real_image, is_train)
+        fake_result = discriminator(fake_image, is_train, reuse=True)
+        d_loss = -tf.reduce_mean(tf.log(real_result) + tf.log(1. - fake_result))  # This optimizes the discriminator.
+        g_loss = -tf.reduce_mean(tf.log(fake_result))  # This optimizes the generator.
 
-    t_vars = tf.trainable_variables()
-    d_vars = [var for var in t_vars if 'dis' in var.name]
-    g_vars = [var for var in t_vars if 'gen' in var.name]
-    trainer_d = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(d_loss, var_list=d_vars)
-    trainer_g = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(g_loss, var_list=g_vars)
+        t_vars = tf.trainable_variables()
+        d_vars = [var for var in t_vars if 'dis' in var.name]
+        g_vars = [var for var in t_vars if 'gen' in var.name]
+        trainer_d = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(d_loss, var_list=d_vars)
+        trainer_g = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(g_loss, var_list=g_vars)
 
-    mnist_data = MnistProvider(args.data_path)
-    epoch_num = args.epoch_num
-    batch_size = args.batch_size
-    batch_num = int(mnist_data.get_train_num() / batch_size)
+        mnist_data = MnistProvider(args.data_path)
+        epoch_num = args.epoch_num
+        batch_size = args.batch_size
+        batch_num = int(mnist_data.get_train_num() / batch_size)
 
-    sess = tf.Session()
-    saver = tf.train.Saver(max_to_keep=5, write_version=tf.train.SaverDef.V1)
-    sess.run(tf.global_variables_initializer())
 
-    print('total training sample num:%d' % mnist_data.get_train_num())
-    print('batch size: %d, batch num per epoch: %d, epoch num: %d' % (batch_size, batch_num, epoch_num))
-    print('start training...')
-    for i in range(epoch_num):
-        for j in range(batch_num):
-            train_image = mnist_data.next_train_batch(batch_size)
-            # add -1 padding to extend 28*28 image to 32*32 image
-            train_image = np.lib.pad(train_image, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant',
-                                     constant_values=(-1, -1))
-            train_noise = np.random.uniform(-1.0, 1.0, size=[batch_size, random_dim]).astype(np.float32)
-            # Update the discriminator
-            _, dLoss = sess.run([trainer_d, d_loss],
-                                feed_dict={random_input: train_noise, real_image: train_image, is_train: True})
-            # Update the generator, twice for good measure.
-            _, gLoss = sess.run([trainer_g, g_loss],
-                                feed_dict={random_input: train_noise, is_train: True})
-            _, gLoss = sess.run([trainer_g, g_loss],
-                                feed_dict={random_input: train_noise, is_train: True})
+        with tf.Session(config=tf_config) as sess:
+            saver = tf.train.Saver(max_to_keep=5, write_version=tf.train.SaverDef.V1)
+            sess.run(tf.global_variables_initializer())
 
-            print('train:[%d/%d],d_loss:%f,g_loss:%f' % (i, j, dLoss, gLoss))
-        # test and save model every epoch, random select 100 samples from testset
-        all_test_image = mnist_data.get_val()
-        rand_arr = np.random.randint(0, mnist_data.get_val_num(), 100)
-        test_image = all_test_image[rand_arr]
-        test_image = np.lib.pad(test_image, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant',
-                                constant_values=(-1, -1))
-        test_noise = np.random.uniform(-1.0, 1.0, size=[100, random_dim]).astype(np.float32)
-        test_gLoss, test_dLoss, gen_images = sess.run([g_loss, d_loss, fake_image],
-                                                      feed_dict={random_input: test_noise,
-                                                                 real_image: test_image,
-                                                                 is_train: True})
-        # [gen_images] = sess.run([fake_image], feed_dict={random_input: test_noise, is_train: True})
-        print('epoch %d test: d_loss:%f,g_loss:%f' % (i, test_dLoss, test_gLoss))
-        gen_images = np.asarray(gen_images, dtype=np.float32).reshape(
-            [gen_images.shape[0], gen_images.shape[1], gen_images.shape[2]])
-        curr_path = os.path.join(args.model_dir, str(i) + '.jpg')
-        render_fonts_image(gen_images, curr_path, 10)
-        # save check point every epoch
-        saver.save(sess, args.model_dir + '/dcgan_' + str(i) + '.cptk')
+            print('total training sample num:%d' % mnist_data.get_train_num())
+            print('batch size: %d, batch num per epoch: %d, epoch num: %d' % (batch_size, batch_num, epoch_num))
+            print('start training...')
+            for i in range(epoch_num):
+                for j in range(batch_num):
+                    train_image = mnist_data.next_train_batch(batch_size)
+                    # add -1 padding to extend 28*28 image to 32*32 image
+                    train_image = np.lib.pad(train_image, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant',
+                                             constant_values=(-1, -1))
+                    train_noise = np.random.uniform(-1.0, 1.0, size=[batch_size, random_dim]).astype(np.float32)
+                    # Update the discriminator
+                    #real_image, random_input, random_dim, is_train
+                    _, dLoss = sess.run([trainer_d, d_loss],feed_dict={random_input: train_noise, real_image: train_image, is_train: True})
+                    # Update the generator, twice for good measure.
+                    _, gLoss = sess.run([trainer_g, g_loss],
+                                        feed_dict={random_input: train_noise, is_train: True})
+                    _, gLoss = sess.run([trainer_g, g_loss],
+                                        feed_dict={random_input: train_noise, is_train: True})
+
+                    #print('train:[%d/%d],d_loss:%f,g_loss:%f' % (i, j, dLoss, gLoss))
+                # test and save model every epoch, random select 100 samples from testset
+                all_test_image = mnist_data.get_val()
+                rand_arr = np.random.randint(0, mnist_data.get_val_num(), 100)
+                test_image = all_test_image[rand_arr]
+                test_image = np.lib.pad(test_image, ((0, 0), (2, 2), (2, 2), (0, 0)), 'constant',
+                                        constant_values=(-1, -1))
+                test_noise = np.random.uniform(-1.0, 1.0, size=[100, random_dim]).astype(np.float32)
+                test_gLoss, test_dLoss, gen_images = sess.run([g_loss, d_loss, fake_image],
+                                                              feed_dict={random_input: test_noise,
+                                                                         real_image: test_image,
+                                                                         is_train: True})
+                # [gen_images] = sess.run([fake_image], feed_dict={random_input: test_noise, is_train: True})
+                print('epoch %d test: d_loss:%f,g_loss:%f' % (i, test_dLoss, test_gLoss))
+                gen_images = np.asarray(gen_images, dtype=np.float32).reshape(
+                    [gen_images.shape[0], gen_images.shape[1], gen_images.shape[2]])
+                curr_path = os.path.join(args.model_dir, str(i) + '.jpg')
+                render_fonts_image(gen_images, curr_path, 10)
+                # save check point every epoch
+                saver.save(sess, args.model_dir + '/dcgan_' + str(i) + '.cptk')
 
 
 def infer(args):
@@ -185,7 +190,7 @@ if __name__ == "__main__":
                         help='directory to save models')
     parser.add_argument('--batch_size', type=int, default='16',
                         help='train batch size')
-    parser.add_argument('--epoch_num', type=int, default='10',
+    parser.add_argument('--epoch_num', type=int, default='100',
                         help='train epoch num')
     parser.add_argument('--rand_dim', type=int, default='128',
                         help='random input noise dimension')

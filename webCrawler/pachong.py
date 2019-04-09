@@ -28,11 +28,8 @@ def download(url,filename):
 if os.path.exists('imgs') is False:
     os.makedirs('imgs')
 
-<<<<<<< HEAD
+
 start = 259
-=======
-start = 1
->>>>>>> origin/master
 end = 8000
 for i in range(start, end+1):
     url = 'http://konachan.net/post?page=%d&tags=' % i

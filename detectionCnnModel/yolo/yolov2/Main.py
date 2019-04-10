@@ -12,14 +12,14 @@ import tensorflow as tf
 import cv2
 from PIL import Image
 
-from .model_darknet19 import darknet
-from .decode import decode
-from .utils import preprocess_image, postprocess, draw_detection
-from .config import anchors, class_names
+from detectionCnnModel.yolo.yolov2.model_darknet19 import darknet
+from detectionCnnModel.yolo.yolov2.decode import decode
+from detectionCnnModel.yolo.yolov2.utils import preprocess_image, postprocess, draw_detection
+from detectionCnnModel.yolo.yolov2.config import anchors, class_names
 
 def main():
     input_size = (416,416)
-    image_file = './yolo2_data/car.jpg'
+    image_file = 'car.jpg'
     image = cv2.imread(image_file)
     image_shape = image.shape[:2] #只取wh，channel=3不取
 
@@ -33,10 +33,10 @@ def main():
     output_decoded = decode(model_output=model_output,output_sizes=output_sizes,
                                num_class=len(class_names),anchors=anchors)  # 解码
 
-    model_path = "./yolo2_model/yolo2_coco.ckpt"
+    model_path = "./checkpoint_dir"
     saver = tf.train.Saver()
     with tf.Session() as sess:
-        saver.restore(sess,model_path)
+        saver.restore(sess,tf.train.latest_checkpoint(model_path))
         bboxes,obj_probs,class_probs = sess.run(output_decoded,feed_dict={tf_image:image_cp})
 
     # 【2】筛选解码后的回归边界框——NMS(post process后期处理)
@@ -44,7 +44,7 @@ def main():
 
     # 【3】绘制筛选后的边界框
     img_detection = draw_detection(image, bboxes, scores, class_max_index, class_names)
-    cv2.imwrite("./yolo2_data/detection.jpg", img_detection)
+    cv2.imwrite("/detection.jpg", img_detection)
     print('YOLO_v2 detection has done!')
     cv2.imshow("detection_results", img_detection)
     cv2.waitKey(0)

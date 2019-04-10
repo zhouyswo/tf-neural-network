@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import os
 import random
-
+import dataloder as dl
 
 def convinit(w, h, channel, featurenum):
     W = tf.Variable(tf.truncated_normal([w, h, channel, featurenum], stddev=0.01))  # 首先需要创建W和b变量
@@ -81,7 +81,7 @@ def model(x, keeppro):
     fcout2 = fcLayer(dropout1, W_2, b_2, True)
     dropout2 = dropout(fcout2, keeppro)
     # fclayer3
-    W_3, b_3 = fcinit(256, 10)
+    W_3, b_3 = fcinit(256, 2)
     fcout3 = fcLayer(dropout2, W_3, b_3, False)
     out_1 = tf.nn.softmax(fcout3)
     out = dropout(out_1, keeppro)
@@ -99,53 +99,58 @@ def accuracy(x, y):
 
 # make data
 # read file
-file = 'D:\\CNN paper\\Alex_net\\image1000test200\\train.txt'
-os.chdir('D:\\CNN paper\\Alex_net\\image1000test200\\train')
-with open(file, 'rb') as f:
-    dirdata = []
-    for line in f.readlines():
-        lines = bytes.decode(line).strip().split('\t')
-        dirdata.append(lines)
-dirdata = np.array(dirdata)
-
-# read imgdata
-imgdir, label_1 = zip(*dirdata)
-alldata_x = []
-for dirname in imgdir:
-    img = cv.imread(dirname.strip(), cv.IMREAD_COLOR)
-    imgdata = cv.resize(img, (320, 320), cv.INTER_LINEAR)
-    alldata_x.append(imgdata)
-# random shuffle
-alldata = zip(alldata_x, label_1)
-temp = list(alldata)
-random.shuffle(temp)
-data_xs, data_label = zip(*temp)
+# file = 'D:\\CNN paper\\Alex_net\\image1000test200\\train.txt'
+# os.chdir('D:\\CNN paper\\Alex_net\\image1000test200\\train')
+# with open(file, 'rb') as f:
+#     dirdata = []
+#     for line in f.readlines():
+#         lines = bytes.decode(line).strip().split('\t')
+#         dirdata.append(lines)
+# dirdata = np.array(dirdata)
+#
+# # read imgdata
+# imgdir, label_1 = zip(*dirdata)
+# alldata_x = []
+# for dirname in imgdir:
+#     img = cv.imread(dirname.strip(), cv.IMREAD_COLOR)
+#     imgdata = cv.resize(img, (320, 320), cv.INTER_LINEAR)
+#     alldata_x.append(imgdata)
+# # random shuffle
+# alldata = zip(alldata_x, label_1)
+# temp = list(alldata)
+# random.shuffle(temp)
+data_xs, data_label = dl.read_img("E:/TestDatas/flower/train/",320, 320, 3)
 data_x = np.array(data_xs)
 label = [int(i) for i in data_label]
 # label one hot
-tf_label_onehot = tf.one_hot(label, 10)
+tf_label_onehot = tf.one_hot(label, 2)
 with tf.Session() as sess:
     data_y = sess.run(tf_label_onehot)
 # data increase
-train_x = data_x[:500]
-train_y = data_y[:500]
-test_x = data_x[500:800]
-test_y = data_y[500:800]
+train_x = data_x[:40]
+train_y = data_y[:40]
+test_x = data_x[40:60]
+test_y = data_y[40:60]
 
 x = tf.placeholder(tf.float32, [None, 320, 320, 3])
-y = tf.placeholder(tf.float32, [None, 10])
+y = tf.placeholder(tf.float32, [None, 2])
 keeppro = tf.placeholder(tf.float32)
 out = model(x, keeppro)
 out = tf.clip_by_value(out, 1e-10, 1.0)
 loss = tf.reduce_mean(-tf.reduce_sum(y * tf.log(out), reduction_indices=[1]))
 Optimizer = tf.train.GradientDescentOptimizer(0.01).minimize(loss)
 init = tf.global_variables_initializer()
+if not os.path.exists("alexnet"):
+    os.makedirs("alexnet")
 with tf.Session() as sess:
     sess.run(init)
+    server = tf.train.Saver()
     for i in range(100):
         sess.run(Optimizer, feed_dict={x: train_x, y: train_y, keeppro: 0.5})
         if i % 10 == 0:
             cost = sess.run(loss, feed_dict={x: train_x, y: train_y, keeppro: 0.5})
+            server.save(sess,"./alexnet/")
             print('after %d iteration,cost is %f' % (i, cost))
-            predict = sess.run(out, feed_dict={x: test_x, keeppro: 0.5})
-            correct_predict = tf.equal(tf.argmax(predict, 1), tf.argmax(y, 1))
+            # predict = sess.run(out, feed_dict={x: test_x, keeppro: 0.5})
+            # correct_predict = tf.equal(tf.argmax(predict, 1), tf.argmax(y, 1))
+            # print(correct_predict)

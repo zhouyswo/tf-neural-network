@@ -9,7 +9,7 @@ from skimage import io, transform
 from tensorflow.python.framework import graph_util
 import collections
 
-path = '/opt/workplace/testDatas/data/animals/'
+path = "E:/TestDatas/flower/train/"#'/opt/workplace/testDatas/data/animals/'
 w = 224
 h = 224
 c = 3
@@ -252,9 +252,9 @@ def train_network(graph, batch_size, num_epochs, pb_file_path):
 
 
 def main():
-    with tf.device("/cpu:0"):
-        batch_size = 12
-        num_epochs = 50
+    # with tf.device("/cpu:0"):
+        batch_size = 4
+        num_epochs = 20
 
         pb_file_path = "vggs.pb"
 

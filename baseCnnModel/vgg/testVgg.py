@@ -30,4 +30,5 @@ def recognize(jpg_path, pb_file_path):
             prediction_labels = np.argmax(img_out_softmax, axis=1)
             print( "label:",prediction_labels)
 
-recognize("vgg16/picture/dog/dog3.jpg", "vgg16/vggs.pb")
+#recognize("E:/TestDatas/flower/test/daisy/2590291468_2635d3e4e0_n.jpg", "vggs.pb")
+recognize("E:/TestDatas/flower/test/dandelion/2553703483_558d12668c_n.jpg", "vggs.pb")
